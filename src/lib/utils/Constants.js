@@ -1,0 +1,1 @@
+export const REPOSITORY_PUBLIC_URL = "https://raw.githubusercontent.com/ig-moreno/dgt-test-trainer/main/public/"
