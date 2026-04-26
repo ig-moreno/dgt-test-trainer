@@ -7,13 +7,12 @@
   import { sm2 } from '../anki';
   import confetti from 'canvas-confetti';
   import GoalSummaryModal from '../components/GoalSummaryModal.svelte';
+  import AnkiCard from '../components/AnkiCard.svelte';
   import { BookOpen, CheckCircle, XCircle, ChevronRight } from 'lucide-svelte';
   
   let currentCard: AnkiCard | null = null;
   let currentQuestion: Question | null = null;
-  let showAnswer = false;
   let loading = true;
-  let selectedOption: number | null = null;
   
   let sessionResults: { correct: boolean, quality: number }[] = [];
   let showSummary = false;
@@ -48,7 +47,6 @@
   }
 
   async function nextCard() {
-    selectedOption = null;
     const now = new Date();
     
     let card = await db.ankiCards.where('dueDate').below(now).first();
@@ -73,15 +71,11 @@
     
     currentCard = card || null;
     currentQuestion = card ? $questions[card.questionId] : null;
-    showAnswer = false;
   }
 
-  function handleOptionClick(index: number) {
-    selectedOption = index;
-    showAnswer = true;
-  }
 
-  async function rate(quality: number) {
+  async function handleRate(e: CustomEvent) {
+    const { quality, isCorrect } = e.detail;
     if (!currentCard || !currentQuestion) return;
     
     const result = sm2(quality, currentCard.interval, currentCard.repetition, currentCard.easeFactor);
@@ -93,7 +87,6 @@
     if (currentCard.id) await db.ankiCards.put(updatedCard);
     else await db.ankiCards.add(updatedCard);
     
-    const isCorrect = Number(selectedOption) === (getCorrectIndex(currentQuestion.correct) - 1);
     sessionResults = [...sessionResults, { correct: isCorrect, quality }];
 
     await db.history.add({
@@ -113,11 +106,20 @@
   $: historyAccuracy = historyAnki.length > 0 ? (historyCorrect / historyAnki.length) * 100 : 0;
 
   function getCorrectIndex(correct: any): number {
-    if (typeof correct === 'number') return correct;
-    if (correct === 'a' || correct === 'A') return 1;
-    if (correct === 'b' || correct === 'B') return 2;
-    if (correct === 'c' || correct === 'C') return 3;
-    return parseInt(correct) || 0;
+    // The data mapping uses 0, 1, 2 for A, B, C
+    if (correct === 0 || correct === "0") return 1;
+    if (correct === 1 || correct === "1") return 2;
+    if (correct === 2 || correct === "2") return 3;
+
+    // Fallback for letters
+    if (typeof correct === 'string') {
+      const lower = correct.toLowerCase();
+      if (lower === 'a') return 1;
+      if (lower === 'b') return 2;
+      if (lower === 'c') return 3;
+    }
+    
+    return 1; // Default to A
   }
 
   $: qHistory = $history.filter(h => h.type === 'anki' && h.referenceId === currentCard?.questionId);
@@ -127,6 +129,11 @@
     3: qHistory.filter(h => h.quality === 3).length,
     5: qHistory.filter(h => h.quality === 5).length
   };
+  $: if (currentQuestion) {
+    const idx = getCorrectIndex(currentQuestion.correct);
+    const letter = idx === 1 ? 'A' : idx === 2 ? 'B' : idx === 3 ? 'C' : '?';
+    console.log(`%c[DEBUG ANKI] Pregunta ID: ${currentQuestion.id} | Correcta: ${idx} (${letter})`, 'color: #3b82f6; font-weight: bold;');
+  }
 </script>
 
 <div class="anki-page">
@@ -160,98 +167,11 @@
         <div class="stack-bg card-1"></div>
 
         {#key currentQuestion.id}
-          <div 
-            class="anki-card-container" 
-            in:fly={{ y: 50, duration: 400, delay: 200 }} 
-            out:fly={{ y: -150, opacity: 0, duration: 300 }}
-          >
-            <div class="card-header">
-              <span class="category">{currentQuestion.category || 'General'}</span>
-              {#if showAnswer}
-                <div class="result-badge" in:fade>
-                  {#if Number(selectedOption) === (getCorrectIndex(currentQuestion.correct) - 1)}
-                    <span class="correct"><CheckCircle size={14} /> Correcto</span>
-                  {:else}
-                    <span class="incorrect"><XCircle size={14} /> Incorrecto</span>
-                  {/if}
-                </div>
-              {/if}
-            </div>
-
-            <div class="card-body">
-              <div class="question-section">
-                <h3>{currentQuestion.question}</h3>
-                {#if currentQuestion.img}
-                  <div class="image-box">
-                    <img src={"./anki-img/" + currentQuestion.img} alt="Pregunta" />
-                  </div>
-                {/if}
-              </div>
-
-              <div class="options-section">
-                {#if !showAnswer}
-                  <div class="options-grid">
-                    <button class="opt-btn" on:click={() => handleOptionClick(0)}>
-                      <span class="letter">A</span>
-                      <span class="text">{currentQuestion.a}</span>
-                    </button>
-                    <button class="opt-btn" on:click={() => handleOptionClick(1)}>
-                      <span class="letter">B</span>
-                      <span class="text">{currentQuestion.b}</span>
-                    </button>
-                    <button class="opt-btn" on:click={() => handleOptionClick(2)}>
-                      <span class="letter">C</span>
-                      <span class="text">{currentQuestion.c}</span>
-                    </button>
-                  </div>
-                {:else}
-                  <div class="correction-view" in:fade>
-                    <div class="correction-item" class:correct={getCorrectIndex(currentQuestion.correct) === 1} class:wrong={Number(selectedOption) === 0 && getCorrectIndex(currentQuestion.correct) !== 1}>
-                      <span class="letter">A</span> {currentQuestion.a}
-                    </div>
-                    <div class="correction-item" class:correct={getCorrectIndex(currentQuestion.correct) === 2} class:wrong={Number(selectedOption) === 1 && getCorrectIndex(currentQuestion.correct) !== 2}>
-                      <span class="letter">B</span> {currentQuestion.b}
-                    </div>
-                    <div class="correction-item" class:correct={getCorrectIndex(currentQuestion.correct) === 3} class:wrong={Number(selectedOption) === 2 && getCorrectIndex(currentQuestion.correct) !== 3}>
-                      <span class="letter">C</span> {currentQuestion.c}
-                    </div>
-                    
-                    {#if currentQuestion.explanation}
-                      <div class="explanation-box" in:fly={{ y: 20 }}>
-                        <strong>¿Por qué?</strong>
-                        <p>{currentQuestion.explanation}</p>
-                      </div>
-                    {/if}
-                  </div>
-                {/if}
-              </div>
-            </div>
-
-            <div class="card-footer">
-              {#if showAnswer}
-                <div class="rating-grid" in:fade>
-                  <button class="r-btn r0" on:click={() => rate(0)}>
-                    <span class="name">Fatal</span>
-                    <span class="count">{counts[0]}</span>
-                  </button>
-                  <button class="r-btn r2" on:click={() => rate(2)}>
-                    <span class="name">Difícil</span>
-                    <span class="count">{counts[2]}</span>
-                  </button>
-                  <button class="r-btn r3" on:click={() => rate(3)}>
-                    <span class="name">Bien</span>
-                    <span class="count">{counts[3]}</span>
-                  </button>
-                  <button class="r-btn r5" on:click={() => rate(5)}>
-                    <span class="name">Fácil</span>
-                    <span class="count">{counts[5]}</span>
-                  </button>
-                </div>
-              {:else}
-                <div class="footer-tip">Elige una opción para ver la respuesta</div>
-              {/if}
-            </div>
-          </div>
+          <AnkiCard 
+            question={currentQuestion} 
+            {counts} 
+            on:rate={handleRate} 
+          />
         {/key}
       </div>
     {:else}

@@ -53,7 +53,8 @@
     if (timerInterval) clearInterval(timerInterval);
     let finalScore = 0;
     const results = attempt.results.map((r, i) => {
-      const isCorrect = answers[i] === r.correct;
+      const q = $questions[r.questionId];
+      const isCorrect = answers[i] === q.correct;
       if (isCorrect) finalScore++;
       return { ...r, selected: answers[i] };
     });
