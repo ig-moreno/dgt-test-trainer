@@ -1,7 +1,8 @@
 <script lang="ts">
   import { db, type Exam, type Attempt } from '../db';
   import { createEventDispatcher } from 'svelte';
-  import { questions, refreshData } from '../stores';
+  import { ChevronLeft, ChevronRight } from 'lucide-svelte';
+  import { questions, refreshData, examMode, examExitRequested, examJumpTo } from '../stores';
   import ConfirmDialog from './ConfirmDialog.svelte';
   
   const dispatch = createEventDispatcher();
@@ -11,16 +12,45 @@
   let currentIndex = 0;
   let finished = attempt?.completed || false;
   let answers = attempt?.results?.map(r => r.selected) || [];
-  let timeLeft = 30 * 60; // 30 minutes
   let timerInterval: any;
+  let showExitConfirm = false;
 
   import { onMount, onDestroy } from 'svelte';
+
+  function formatTime(seconds: number) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  $: examMode.set({
+    active: true,
+    finished,
+    current: currentIndex + 1,
+    total: attempt.total,
+    timeLeft: $examMode.timeLeft,
+    answered: attempt?.results?.map(r => r.selected >= 0) || []
+  });
+
+  $: if ($examExitRequested) {
+    examExitRequested.set(false);
+    if (!finished) {
+      showExitConfirm = true;
+    }
+  }
+
+  $: if ($examJumpTo !== 0 && !finished) {
+    if ($examJumpTo >= 0 && $examJumpTo < attempt.total) {
+      currentIndex = $examJumpTo;
+    }
+    examJumpTo.set(0);
+  }
   
   onMount(() => {
     if (!finished) {
       timerInterval = setInterval(() => {
-        timeLeft--;
-        if (timeLeft <= 0) {
+        $examMode.timeLeft--;
+        if ($examMode.timeLeft <= 0) {
           clearInterval(timerInterval);
           finish();
         }
@@ -30,13 +60,8 @@
 
   onDestroy(() => {
     if (timerInterval) clearInterval(timerInterval);
+    examMode.set({ active: false, finished: false, current: 0, total: 0, timeLeft: 30 * 60, answered: [] });
   });
-
-  function formatTime(seconds: number) {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  }
 
   $: currentQuestion = ($questions.length > 0 && attempt?.results?.[currentIndex]) 
     ? $questions[attempt.results[currentIndex].questionId] 
@@ -91,8 +116,6 @@
     attempt.completed = false;
   }
 
-  let showExitConfirm = false;
-
   async function handleExit() {
     if (!finished) {
       showExitConfirm = true;
@@ -111,361 +134,121 @@
   <ConfirmDialog 
     title="¿Abandonar examen?" 
     message="Si sales ahora, tu progreso se perderá y este intento no se guardará en el historial."
-    confirmText="Salir y borrar"
-    cancelText="Continuar examen"
+    confirmText="Abandonar"
+    cancelText="Continuar con el examen"
     type="danger"
     on:confirm={confirmExit}
     on:cancel={() => showExitConfirm = false}
   />
 {/if}
 
-<div class="simulator">
+<div class="bg-transparent md:bg-white p-0 md:p-8 pt-[62px] md:pt-[62px] pb-20 md:pb-8 rounded-none md:rounded-3xl shadow-none md:shadow-[0_10px_30px_rgba(0,0,0,0.1)]">
   {#if !attempt.results || attempt.results.length === 0}
-    <p>Cargando preguntas...</p>
+    <p class="text-gray-500">Cargando preguntas...</p>
   {:else}
-    <div class="sim-header">
-      <div class="header-left">
-        <h3>{exam.name}</h3>
-        {#if !finished}
-          <span class="progress-info">Pregunta {currentIndex + 1} / {attempt.total}</span>
-          <span class="timer" class:warning={timeLeft < 300}>
-            ⏱️ {formatTime(timeLeft)}
-          </span>
-        {/if}
-      </div>
+    <div class="hidden md:block mb-6 pb-4 border-b border-gray-100">
       {#if !finished}
-        <button 
-          type="button" 
-          class="exit-trigger"
-          on:click|once={handleExit}
-        >
-          Salir del Examen
-        </button>
+        <h3 class="text-lg font-bold text-warm-600">{exam.name}</h3>
       {/if}
     </div>
 
     {#if !finished}
       {#if !currentQuestion}
-        <div class="loading-box">
+        <div class="py-10 text-center text-gray-400">
           <p>Preparando pregunta {currentIndex + 1}...</p>
         </div>
       {:else}
-        <div class="question-box">
-        {#if currentQuestion.img}
-          <img src={"./anki-img/" + currentQuestion.img} alt="Q" class="q-img" />
-        {/if}
-        <p class="question-text">{currentQuestion.question}</p>
-        
-        <div class="options">
-          {#each ['a', 'b', 'c'] as opt, i}
-            <button 
-              class="option-btn" 
-              class:selected={answers[currentIndex] === i}
-              on:click={() => selectOption(i)}
-            >
-              {opt.toUpperCase()}) {currentQuestion[opt]}
-            </button>
-          {/each}
+        <div>
+          {#if currentQuestion.img}
+            <img src={"./anki-img/" + currentQuestion.img} alt="Q" class="w-full h-60 md:h-96 object-cover rounded-xl mb-4 shadow-lg" />
+          {/if}
+          <p class="text-xl md:text-2xl font-semibold m-6 text-warm-600">{currentQuestion.question}</p>
+          
+          <div class="flex flex-col gap-3">
+            {#each ['a', 'b', 'c'] as opt, i}
+              <button 
+                class="flex items-center gap-3 text-left bg-gray-50 text-warm-600 border-2 transition-none py-3.5 px-4 md:px-5 rounded-2xl cursor-pointer
+                       hover:bg-gray-100
+                       {answers[currentIndex] === i ? 'bg-indigo-50 border-[var(--color-accent)]' : 'border-gray-50'}"
+                on:click={() => selectOption(i)}
+              >
+                <span class="inline-flex items-center justify-center w-11 h-11 p-1.5 rounded-full border border-[var(--color-accent)] font-black text-base flex-shrink-0 self-start mt-0.5
+                             {answers[currentIndex] === i ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-white' : 'text-[var(--color-accent)]'}">{opt.toUpperCase()}</span>
+                {currentQuestion[opt]}
+              </button>
+            {/each}
+          </div>
         </div>
-      </div>
-    {/if}
+      {/if}
 
-      <div class="controls">
-        <button disabled={currentIndex === 0} on:click={() => currentIndex--}>Anterior</button>
+      <div class="fixed bottom-0 inset-x-0 flex justify-between gap-3 px-4 py-3 pb-5 bg-gradient-to-b from-transparent to-[var(--color-bg)]">
+        <button class="flex items-center justify-center gap-1 bg-[var(--color-accent)] hover:bg-[var(--color-accent)] text-white font-semibold px-5 pr-7 py-3 rounded-full border-none cursor-pointer hover:translate-y-0 active:translate-y-0 disabled:cursor-not-allowed disabled:bg-[#bdb8c3] disabled:hover:bg-[#bdb8c3] disabled:text-white"
+                disabled={currentIndex === 0} on:click={() => currentIndex--}>
+          <ChevronLeft size={20} />
+          <span>Anterior</span>
+        </button>
         
         {#if currentIndex < 29}
-          <button on:click={() => currentIndex++}>Siguiente</button>
+          <button class="flex items-center justify-center gap-1 bg-[var(--color-accent)] hover:bg-[var(--color-accent)] text-white font-semibold pl-7 px-5 py-3 rounded-full border-none cursor-pointer hover:translate-y-0 active:translate-y-0 disabled:cursor-not-allowed disabled:bg-[#bdb8c3] disabled:hover:bg-[#bdb8c3] disabled:text-white" on:click={() => currentIndex++}>
+            <span>Siguiente</span>
+            <ChevronRight size={20} />
+          </button>
         {:else}
-          <button class="finish-btn" on:click={finish}>Corregir</button>
+          <button class="flex items-center justify-center gap-1 bg-[#e37b00] hover:bg-[#c96e00] text-white font-semibold px-7 py-3 rounded-full border-none cursor-pointer hover:translate-y-0 active:translate-y-0 disabled:cursor-not-allowed disabled:bg-[#bdb8c3] disabled:hover:bg-[#bdb8c3] disabled:text-white" on:click={finish}>
+            <span>Corregir</span>
+          </button>
         {/if}
       </div>
     {:else}
-      <div class="exam-summary">
-        <div class="result-banner" class:pass={attempt.score >= 27} class:fail={attempt.score < 27}>
-          <h2>{attempt.score >= 27 ? '¡APROBADO!' : 'SUSPENSO'}</h2>
-          <p>Puntuación: {attempt.score} / 30</p>
+      <div class="mt-6 text-left">
+        <div class="text-center p-6 md:p-10 rounded-2xl mb-8 text-white
+                    {attempt.score >= 27 ? 'bg-green-500' : 'bg-red-500'}">
+          <h2 class="text-3xl md:text-4xl font-bold">{attempt.score >= 27 ? '¡APROBADO!' : 'SUSPENSO'}</h2>
+          <p class="mt-2">Puntuación: {attempt.score} / 30</p>
         </div>
 
-        <div class="questions-review">
+        <div class="grid gap-5">
           {#each attempt.results as res, i}
             {@const q = $questions[res.questionId]}
-            <div class="review-item" class:correct={res.selected === q.correct} class:wrong={res.selected !== q.correct}>
-              <div class="review-header">
-                <span class="q-num">Pregunta {i + 1}</span>
-                <span class="q-status">{res.selected === q.correct ? 'Correcta' : 'Incorrecta'}</span>
+            <div class="bg-gray-50 p-4 md:p-6 rounded-2xl border-l-4
+                        {res.selected === q.correct ? 'border-green-500' : 'border-red-500'}">
+              <div class="flex justify-between mb-4 font-bold text-sm">
+                <span class="text-warm-600">Pregunta {i + 1}</span>
+                <span class="{res.selected === q.correct ? 'text-green-600' : 'text-red-600'}">
+                  {res.selected === q.correct ? 'Correcta' : 'Incorrecta'}
+                </span>
               </div>
 
               {#if q.img}
-                <img src={"./anki-img/" + q.img} alt="Q" class="q-img-thumb" />
+                <img src={"./anki-img/" + q.img} alt="Q" class="max-w-[200px] max-h-[150px] object-contain rounded-lg mb-4" />
               {/if}
               
-              <p class="q-text">{q.question}</p>
+              <p class="font-semibold mb-4 text-warm-600">{q.question}</p>
 
-              <div class="review-options">
+              <div class="flex flex-col gap-1 mb-4">
                 {#each ['a', 'b', 'c'] as opt, idx}
-                  <div class="opt-line" 
-                    class:sel={res.selected === idx} 
-                    class:is-correct={q.correct === idx}
-                    class:is-wrong={res.selected === idx && q.correct !== idx}
-                  >
-                    {opt.toUpperCase()}) {q[opt]}
+                  <div class="flex items-center gap-2 p-2 rounded-lg text-sm
+                              {q.correct === idx ? 'bg-green-100 text-green-800 font-semibold' : ''}
+                              {res.selected === idx && q.correct !== idx ? 'bg-red-100 text-red-800' : ''}">
+                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-300 text-slate-800 font-black text-xs flex-shrink-0">{opt.toUpperCase()}</span>
+                    {q[opt]}
                   </div>
                 {/each}
               </div>
 
               {#if q.explanation}
-                <div class="review-explanation">
-                  <strong>Explicación:</strong> {q.explanation.charAt(0).toUpperCase() + q.explanation.slice(1).toLowerCase()}
+                <div class="bg-warm-50 p-4 rounded-xl text-sm border border-warm-100">
+                  <strong class="text-warm-700">Explicación:</strong> {q.explanation.charAt(0).toUpperCase() + q.explanation.slice(1).toLowerCase()}
                 </div>
               {/if}
             </div>
           {/each}
         </div>
-        <div class="summary-actions">
-          <button class="repeat-btn" on:click={repeat}>Repetir prueba</button>
-          <button class="exit-btn" on:click={() => dispatch('close')}>Finalizar</button>
+        <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center sticky bottom-0 bg-white py-4">
+          <button class="bg-blue-600 text-white font-bold py-3 px-6 rounded-xl border-none cursor-pointer hover:bg-blue-700" on:click={repeat}>Repetir prueba</button>
+          <button class="bg-gray-500 text-white font-bold py-3 px-6 rounded-xl border-none cursor-pointer hover:bg-gray-600" on:click={() => dispatch('close')}>Finalizar</button>
         </div>
       </div>
     {/if}
   {/if}
 </div>
-
-<style>
-  .simulator {
-    background: #fff;
-    padding: 2rem;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-  }
-
-  .sim-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #eee;
-  }
-
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-  }
-
-  .progress-info {
-    background: #f3f4f6;
-    padding: 0.4rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    color: #6b7280;
-    font-weight: 600;
-  }
-
-  .exit-trigger {
-    background: #fee2e2;
-    color: #b91c1c;
-    border: none;
-    padding: 0.6rem 1.2rem;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .exit-trigger:hover {
-    background: #fecaca;
-    transform: translateY(-2px);
-  }
-
-  .timer {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: #eff6ff;
-    color: #1e40af;
-    padding: 0.4rem 1rem;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .timer.warning {
-    background: #fef2f2;
-    color: #b91c1c;
-    animation: pulse 1s infinite;
-  }
-
-  @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.7; }
-    100% { opacity: 1; }
-  }
-
-  .q-img {
-    width: 100%;
-    max-height: 300px;
-    object-fit: contain;
-    border-radius: 10px;
-    margin-bottom: 1rem;
-  }
-
-  .question-text {
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-  }
-
-  .options {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-  }
-
-  .option-btn {
-    text-align: left;
-    background: #f9fafb;
-    color: #5c4b37;
-    border: 2px solid transparent;
-    box-shadow: none;
-    transition: all 0.2s;
-  }
-
-  .option-btn:hover:not(:disabled) {
-    background: #f3f4f6;
-    border-color: #8fb339;
-  }
-
-  .option-btn.selected {
-    background: #eef2ff;
-    border-color: #3b82f6;
-  }
-
-  .option-btn.correct {
-    background: #d1fae5;
-    border-color: #10b981;
-    color: #065f46;
-  }
-
-  .option-btn.wrong {
-    background: #fee2e2;
-    border-color: #ef4444;
-    color: #991b1b;
-  }
-
-  .controls {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 2rem;
-  }
-
-  .finish-btn { background: #8fb339; }
-
-  .explanation {
-    margin-top: 1rem;
-    padding: 1rem;
-    background: #fdf6e3;
-    border-radius: 10px;
-    font-size: 0.9rem;
-  }
-
-  .result-summary {
-    margin-top: 1.5rem;
-    text-align: center;
-    font-size: 1.5rem;
-    font-weight: 700;
-  }
-
-  .pass { color: #10b981; }
-  .fail { color: #ef4444; }
-
-  .exam-summary {
-    margin-top: 2rem;
-    text-align: left;
-  }
-
-  .result-banner {
-    text-align: center;
-    padding: 2rem;
-    border-radius: 15px;
-    margin-bottom: 2rem;
-    color: white;
-  }
-  .result-banner.pass { background: #10b981; }
-  .result-banner.fail { background: #ef4444; }
-  .result-banner h2 { margin: 0; font-size: 2.5rem; }
-
-  .questions-review {
-    display: grid;
-    gap: 1.5rem;
-  }
-
-  .review-item {
-    background: #f9fafb;
-    padding: 1.5rem;
-    border-radius: 15px;
-    border-left: 5px solid #eee;
-  }
-  .review-item.correct { border-left-color: #10b981; }
-  .review-item.wrong { border-left-color: #ef4444; }
-
-  .review-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-    font-weight: 700;
-    font-size: 0.9rem;
-  }
-
-  .q-img-thumb {
-    max-width: 200px;
-    max-height: 150px;
-    object-fit: contain;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-  }
-
-  .q-text {
-    font-weight: 600;
-    margin-bottom: 1rem;
-  }
-
-  .review-options {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    margin-bottom: 1rem;
-  }
-
-  .opt-line {
-    padding: 0.5rem;
-    border-radius: 5px;
-    font-size: 0.9rem;
-  }
-
-  .is-correct { background: #d1fae5; color: #065f46; font-weight: 600; }
-  .is-wrong { background: #fee2e2; color: #991b1b; }
-
-  .review-explanation {
-    background: #fdf6e3;
-    padding: 1rem;
-    border-radius: 10px;
-    font-size: 0.85rem;
-    border: 1px solid #eee;
-  }
-
-  .summary-actions {
-    margin-top: 2rem;
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    position: sticky;
-    bottom: 0;
-    background: white;
-    padding: 1rem 0;
-  }
-
-  .repeat-btn { background: #3b82f6; }
-  .exit-btn { background: #64748b; }
-</style>

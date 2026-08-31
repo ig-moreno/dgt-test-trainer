@@ -40,294 +40,98 @@
 </script>
 
 <div 
-  class="anki-card-container" 
+  class="relative w-full min-h-[600px] md:min-h-[700px] bg-white rounded-[30px] md:rounded-[30px]
+         shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-gray-50 z-10 flex flex-col overflow-hidden"
   in:fly={{ y: 50, duration: 400, delay: 200 }} 
   out:fly={{ y: -150, opacity: 0, duration: 300 }}
 >
-  <div class="card-header">
-    <span class="category">{question.category || 'General'}</span>
+  <div class="px-5 md:px-8 py-4 md:py-6 flex justify-between items-center border-b border-gray-50 bg-[#fcfcfc]">
+    <span class="font-extrabold text-gray-400 uppercase tracking-widest text-xs">{question.category || 'General'}</span>
     {#if showAnswer}
-      <div class="result-badge" in:fade>
+      <div in:fade>
         {#if Number(selectedOption) === (correctIdx - 1)}
-          <span class="correct"><CheckCircle size={14} /> Correcto</span>
+          <span class="flex items-center gap-1.5 font-bold text-sm text-green-800"><CheckCircle size={14} /> Correcto</span>
         {:else}
-          <span class="incorrect"><XCircle size={14} /> Incorrecto</span>
+          <span class="flex items-center gap-1.5 font-bold text-sm text-red-800"><XCircle size={14} /> Incorrecto</span>
         {/if}
       </div>
     {/if}
   </div>
 
-  <div class="card-body">
-    <div class="question-section">
-      <h3>{question.question}</h3>
+  <div class="flex-1 px-5 md:px-8 py-5 md:py-8 flex flex-col gap-5 overflow-y-auto">
+    <div>
+      <h3 class="text-xl md:text-2xl text-slate-800 leading-relaxed">{question.question}</h3>
       {#if question.img}
-        <div class="image-box">
-          <img src={"./anki-img/" + question.img} alt="Pregunta" />
+        <div class="w-full bg-slate-100 rounded-3xl p-2.5 box-border mt-4">
+          <img src={"./anki-img/" + question.img} alt="Pregunta" class="w-full max-h-60 object-contain rounded-2xl block" />
         </div>
       {/if}
     </div>
 
-    <div class="options-section" class:revealed={showAnswer}>
-      <div class="options-grid">
-        {#each [
-          { key: 'a', label: 'A', text: question.a, index: 0 },
-          { key: 'b', label: 'B', text: question.b, index: 1 },
-          { key: 'c', label: 'C', text: question.c, index: 2 }
-        ] as opt}
-          <button 
-            class="opt-btn result-btn" 
-            class:correct={showAnswer && correctIdx === (opt.index + 1)}
-            class:wrong={showAnswer && selectedOption === opt.index && correctIdx !== (opt.index + 1)}
-            class:dimmed={showAnswer && selectedOption !== opt.index && correctIdx !== (opt.index + 1)}
-            on:click={() => handleOptionClick(opt.index)}
-            disabled={showAnswer}
-          >
-            <span class="letter">{opt.label}</span>
-            <span class="text">{opt.text}</span>
-          </button>
-        {/each}
-      </div>
+    <div class="flex flex-col gap-3 md:gap-4" class:revealed={showAnswer}>
+      {#each [
+        { key: 'a', label: 'A', text: question.a, index: 0 },
+        { key: 'b', label: 'B', text: question.b, index: 1 },
+        { key: 'c', label: 'C', text: question.c, index: 2 }
+      ] as opt}
+        <button 
+          class="flex items-center gap-3 md:gap-5 text-left px-4 md:px-6 py-3.5 md:py-5 bg-gray-50 md:border-2 border-gray-200 rounded-2xl
+                 transition-all duration-300 cursor-pointer w-full box-border relative
+                 not-disabled:hover:bg-gray-100 not-disabled:md:hover:border-dgt-500 not-disabled:hover:translate-x-2
+                 {showAnswer && correctIdx === (opt.index + 1) ? 'bg-green-50 md:border-green-500 text-green-800 scale-[1.02] z-[2]' : ''}
+                 {showAnswer && selectedOption === opt.index && correctIdx !== (opt.index + 1) ? 'bg-red-50 md:border-red-500 text-red-800' : ''}
+                 {showAnswer && selectedOption !== opt.index && correctIdx !== (opt.index + 1) ? 'opacity-60 grayscale-[0.5] scale-[0.98]' : ''}"
+          on:click={() => handleOptionClick(opt.index)}
+          disabled={showAnswer}
+        >
+          <span class="flex-shrink-0 w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center font-black text-base text-slate-800 transition-colors
+                       {showAnswer && correctIdx === (opt.index + 1) ? 'bg-green-500 text-white' : ''}
+                       {showAnswer && selectedOption === opt.index && correctIdx !== (opt.index + 1) ? 'bg-red-500 text-white' : ''}">
+            {opt.label}
+          </span>
+          <span class="text-base md:text-lg font-semibold text-slate-600 leading-relaxed">{opt.text}</span>
+        </button>
+      {/each}
 
       {#if showAnswer && question.explanation}
-        <div class="explanation-box" in:fly={{ y: 20 }}>
-          <strong>¿Por qué?</strong>
-          <p>{question.explanation}</p>
+        <div class="mt-4 p-5 bg-amber-50 rounded-3xl border-l-4 border-amber-500 shadow-[0_4px_12px_rgba(245,158,11,0.1)]" in:fly={{ y: 20 }}>
+          <strong class="text-amber-900 text-base block mb-2">¿Por qué?</strong>
+          <p class="text-sm text-amber-700 leading-relaxed">{question.explanation}</p>
         </div>
       {/if}
     </div>
   </div>
 
-  <div class="card-footer">
+  <div class="px-5 md:px-8 py-4 md:py-8 bg-gray-50 border-t border-gray-100 mt-auto">
     {#if showAnswer}
-      <div class="rating-grid" in:fade>
-        <button class="r-btn r0" on:click={() => handleRate(0)}>
-          <span class="name">Fatal</span>
-          <span class="count">{counts[0] || 0}</span>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-3" in:fade>
+        <button class="flex flex-col items-center justify-center py-3 md:py-4 rounded-2xl transition-all cursor-pointer border-none shadow-[0_2px_5px_rgba(0,0,0,0.05)]
+                      bg-red-100 text-red-800 hover:-translate-y-1.5 hover:shadow-[0_8px_15px_rgba(0,0,0,0.1)]"
+                on:click={() => handleRate(0)}>
+          <span class="text-xs font-extrabold uppercase mb-0.5">Fatal</span>
+          <span class="text-xs opacity-80 font-bold">{counts[0] || 0}</span>
         </button>
-        <button class="r-btn r2" on:click={() => handleRate(2)}>
-          <span class="name">Difícil</span>
-          <span class="count">{counts[2] || 0}</span>
+        <button class="flex flex-col items-center justify-center py-3 md:py-4 rounded-2xl transition-all cursor-pointer border-none shadow-[0_2px_5px_rgba(0,0,0,0.05)]
+                      bg-orange-50 text-orange-800 hover:-translate-y-1.5 hover:shadow-[0_8px_15px_rgba(0,0,0,0.1)]"
+                on:click={() => handleRate(2)}>
+          <span class="text-xs font-extrabold uppercase mb-0.5">Difícil</span>
+          <span class="text-xs opacity-80 font-bold">{counts[2] || 0}</span>
         </button>
-        <button class="r-btn r3" on:click={() => handleRate(3)}>
-          <span class="name">Bien</span>
-          <span class="count">{counts[3] || 0}</span>
+        <button class="flex flex-col items-center justify-center py-3 md:py-4 rounded-2xl transition-all cursor-pointer border-none shadow-[0_2px_5px_rgba(0,0,0,0.05)]
+                      bg-green-50 text-green-800 hover:-translate-y-1.5 hover:shadow-[0_8px_15px_rgba(0,0,0,0.1)]"
+                on:click={() => handleRate(3)}>
+          <span class="text-xs font-extrabold uppercase mb-0.5">Bien</span>
+          <span class="text-xs opacity-80 font-bold">{counts[3] || 0}</span>
         </button>
-        <button class="r-btn r5" on:click={() => handleRate(5)}>
-          <span class="name">Fácil</span>
-          <span class="count">{counts[5] || 0}</span>
+        <button class="flex flex-col items-center justify-center py-3 md:py-4 rounded-2xl transition-all cursor-pointer border-none shadow-[0_2px_5px_rgba(0,0,0,0.05)]
+                      bg-emerald-50 text-emerald-800 hover:-translate-y-1.5 hover:shadow-[0_8px_15px_rgba(0,0,0,0.1)]"
+                on:click={() => handleRate(5)}>
+          <span class="text-xs font-extrabold uppercase mb-0.5">Fácil</span>
+          <span class="text-xs opacity-80 font-bold">{counts[5] || 0}</span>
         </button>
       </div>
     {:else}
-      <div class="footer-tip">Elige una opción para ver la respuesta</div>
+      <div class="text-center text-gray-400 text-sm font-bold">Elige una opción para ver la respuesta</div>
     {/if}
   </div>
 </div>
-
-<style>
-  .anki-card-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    min-height: 700px;
-    background: white;
-    border-radius: 30px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-    border: 1px solid #f1f5f9;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .card-header {
-    padding: 1.5rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #f8fafc;
-    background: #fcfcfc;
-  }
-
-  .category {
-    font-weight: 800;
-    color: #94a3b8;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
-  }
-
-  .result-badge span {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-weight: 700;
-    font-size: 0.9rem;
-  }
-  .correct { color: #166534; }
-  .incorrect { color: #991b1b; }
-
-  .card-body {
-    flex: 1;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    overflow-y: auto;
-  }
-
-  .question-section h3 {
-    font-size: 1.5rem;
-    color: #1e293b;
-    line-height: 1.4;
-    margin: 0;
-  }
-
-  .image-box {
-    width: 100%;
-    background: #f1f5f9;
-    border-radius: 20px;
-    padding: 0.8rem;
-    box-sizing: border-box;
-  }
-
-  .image-box img {
-    width: 100%;
-    max-height: 250px;
-    object-fit: contain;
-    border-radius: 12px;
-    display: block;
-  }
-
-  .options-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .opt-btn {
-    display: flex;
-    align-items: center;
-    gap: 1.2rem;
-    text-align: left;
-    padding: 1.2rem;
-    background: #f8fafc;
-    border: 2px solid #e2e8f0;
-    border-radius: 18px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
-    width: 100%;
-    box-sizing: border-box;
-    position: relative;
-  }
-
-  .opt-btn:not(:disabled):hover {
-    background: #f1f5f9;
-    border-color: #8fb339;
-    transform: translateX(8px);
-  }
-
-  .opt-btn.correct {
-    background: #f0fdf4;
-    border-color: #22c55e;
-    color: #166534;
-    transform: scale(1.02);
-    z-index: 2;
-  }
-
-  .opt-btn.wrong {
-    background: #fef2f2;
-    border-color: #ef4444;
-    color: #991b1b;
-  }
-
-  .opt-btn.dimmed {
-    opacity: 0.6;
-    filter: grayscale(0.5);
-    transform: scale(0.98);
-  }
-
-  .letter {
-    flex-shrink: 0;
-    width: 32px;
-    height: 32px;
-    background: #cbd5e1;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 900;
-    font-size: 0.9rem;
-    color: #1e293b;
-    transition: background 0.3s;
-  }
-
-  .correct .letter { background: #22c55e; color: white; }
-  .wrong .letter { background: #ef4444; color: white; }
-
-  .opt-btn .text {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #334155;
-    line-height: 1.4;
-  }
-
-  .options-section.revealed .opt-btn:disabled {
-    cursor: default;
-  }
-
-  .explanation-box {
-    margin-top: 1rem;
-    padding: 1.5rem;
-    background: #fffbeb;
-    border-radius: 20px;
-    border-left: 5px solid #f59e0b;
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);
-  }
-
-  .explanation-box strong { color: #92400e; font-size: 1rem; display: block; margin-bottom: 0.5rem; }
-  .explanation-box p { font-size: 0.95rem; color: #b45309; line-height: 1.6; margin: 0; }
-
-  .card-footer {
-    padding: 2rem;
-    background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
-    margin-top: auto;
-  }
-
-  .rating-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.8rem;
-  }
-
-  .r-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 0.8rem 0.4rem;
-    border-radius: 14px;
-    transition: all 0.2s;
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-  }
-
-  .r-btn .name { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; margin-bottom: 2px; }
-  .r-btn .count { font-size: 0.7rem; opacity: 0.8; font-weight: 700; }
-
-  .r0 { background: #fee2e2; color: #991b1b; }
-  .r2 { background: #fff7ed; color: #9a3412; }
-  .r3 { background: #f0fdf4; color: #166534; }
-  .r5 { background: #ecfdf5; color: #065f46; }
-
-  .r-btn:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
-
-  .footer-tip {
-    text-align: center;
-    color: #94a3b8;
-    font-size: 0.9rem;
-    font-weight: 700;
-  }
-</style>

@@ -219,46 +219,58 @@
 </script>
 
 <div class="history-page">
-  <div class="header">
-    <h2>Historial de Actividad</h2>
-    <div class="tabs">
-      <button class:active={activeTab === 'anki'} on:click={() => activeTab = 'anki'}>Anki</button>
-      <button class:active={activeTab === 'exams'} on:click={() => activeTab = 'exams'}>Exámenes</button>
-      <button class:active={activeTab === 'summary'} on:click={() => activeTab = 'summary'}>Resumen</button>
+  <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-6">
+    <h2 class="text-2xl font-bold text-warm-600">Historial de Actividad</h2>
+    <div class="inline-flex bg-gray-100 p-1 rounded-xl gap-1 w-full md:w-auto overflow-x-auto scrollbar-hide">
+      <button class="flex-1 md:flex-none px-4 py-2 border-none rounded-lg cursor-pointer font-semibold transition-all
+                     bg-transparent text-gray-500
+                     {activeTab === 'anki' ? 'bg-white text-warm-600 shadow-[0_2px_4px_rgba(0,0,0,0.05)]' : ''}"
+              on:click={() => activeTab = 'anki'}>Anki</button>
+      <button class="flex-1 md:flex-none px-4 py-2 border-none rounded-lg cursor-pointer font-semibold transition-all
+                     bg-transparent text-gray-500
+                     {activeTab === 'exams' ? 'bg-white text-warm-600 shadow-[0_2px_4px_rgba(0,0,0,0.05)]' : ''}"
+              on:click={() => activeTab = 'exams'}>Exámenes</button>
+      <button class="flex-1 md:flex-none px-4 py-2 border-none rounded-lg cursor-pointer font-semibold transition-all
+                     bg-transparent text-gray-500
+                     {activeTab === 'summary' ? 'bg-white text-warm-600 shadow-[0_2px_4px_rgba(0,0,0,0.05)]' : ''}"
+              on:click={() => activeTab = 'summary'}>Resumen</button>
     </div>
   </div>
 
   {#if activeTab === 'anki'}
     <div class="tab-content" in:fade>
-      <div class="chart-box">
-        <h3>Evolución de Aciertos Anki</h3>
-        <div bind:this={ankiChartContainer} class="chart"></div>
-        <p class="legend">
-          <span class="bar-leg"></span> Preguntas respondidas 
-          <span class="line-leg"></span> Aciertos
+      <div class="bg-white p-4 md:p-6 rounded-3xl mb-8 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+        <h3 class="font-semibold text-warm-600 mb-2">Evolución de Aciertos Anki</h3>
+        <div bind:this={ankiChartContainer} class="w-full h-[300px]"></div>
+        <p class="flex flex-wrap justify-center gap-4 text-sm mt-4">
+          <span class="flex items-center gap-1.5"><span class="inline-block w-5 h-2.5 bg-dgt-500/50 rounded"></span> Preguntas respondidas</span>
+          <span class="flex items-center gap-1.5"><span class="inline-block w-5 h-0.5 bg-warm-600"></span> Aciertos</span>
         </p>
       </div>
 
       <div class="list-section">
-        <h3>Histórico de Preguntas</h3>
-        <div class="list">
+        <h3 class="font-semibold text-warm-600 mb-4">Histórico de Preguntas</h3>
+        <div class="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
           {#each paginatedAnki as entry}
-            <div class="item">
-              <span class="date">{entry.date.toLocaleString()}</span>
-              <span class="result" class:pass={entry.correct} class:fail={!entry.correct}>
+            <div class="flex justify-between items-center gap-3 px-3 py-3 md:p-4 border-b border-gray-50">
+              <span class="text-sm text-gray-500">{entry.date.toLocaleString()}</span>
+              <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide
+                           {entry.correct ? 'text-green-800 bg-green-50 border border-green-200' : 'text-red-800 bg-red-50 border border-red-200'}">
                 {entry.correct ? 'Acierto' : 'Fallo'}
               </span>
             </div>
           {:else}
-            <p class="empty">No hay actividad registrada aún.</p>
+            <p class="p-8 text-center text-gray-500 italic">No hay actividad registrada aún.</p>
           {/each}
         </div>
 
         {#if totalAnkiPages > 1}
-          <div class="pagination">
-            <button disabled={ankiPage === 0} on:click={() => ankiPage--}>Anterior</button>
-            <span>Página {ankiPage + 1} de {totalAnkiPages}</span>
-            <button disabled={ankiPage >= totalAnkiPages - 1} on:click={() => ankiPage++}>Siguiente</button>
+          <div class="flex justify-center items-center gap-4 mt-6">
+            <button class="bg-gray-100 text-warm-600 font-semibold py-2 px-4 rounded-lg border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" 
+                    disabled={ankiPage === 0} on:click={() => ankiPage--}>Anterior</button>
+            <span class="text-sm text-gray-500">Página {ankiPage + 1} de {totalAnkiPages}</span>
+            <button class="bg-gray-100 text-warm-600 font-semibold py-2 px-4 rounded-lg border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" 
+                    disabled={ankiPage >= totalAnkiPages - 1} on:click={() => ankiPage++}>Siguiente</button>
           </div>
         {/if}
       </div>
@@ -267,36 +279,37 @@
 
   {#if activeTab === 'exams'}
     <div class="tab-content">
-      <div class="chart-box">
-        <h3>Progreso en Exámenes</h3>
-        <div bind:this={examChartContainer} class="chart"></div>
-        <p class="legend">
-          <span class="exam-line-leg"></span> Puntuación (max 30)
-          <span class="threshold-leg"></span> Límite aprobado (27)
+      <div class="bg-white p-4 md:p-6 rounded-3xl mb-8 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+        <h3 class="font-semibold text-warm-600 mb-2">Progreso en Exámenes</h3>
+        <div bind:this={examChartContainer} class="w-full h-[300px]"></div>
+        <p class="flex flex-wrap justify-center gap-4 text-sm mt-4">
+          <span class="flex items-center gap-1.5"><span class="inline-block w-5 h-0.5 bg-blue-600"></span> Puntuación (max 30)</span>
+          <span class="flex items-center gap-1.5"><span class="inline-block w-5 border-t-2 border-dashed border-red-500"></span> Límite aprobado (27)</span>
         </p>
       </div>
 
       <div class="list-section">
-        <h3>Exámenes Realizados</h3>
-        <div class="list">
+        <h3 class="font-semibold text-warm-600 mb-4">Exámenes Realizados</h3>
+        <div class="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
           {#each $attempts.filter(a => a.completed) as attempt}
             {@const examTemplate = $exams.find(e => e.id === attempt.examId)}
             {@const fails = attempt.total - attempt.score}
             {@const passed = attempt.score >= 27}
-            <div class="item exam-item">
-              <div class="exam-info">
-                <span class="exam-name">{examTemplate?.name || 'Examen'}</span>
-                <span class="exam-date">{new Date(attempt.date).toLocaleString()}</span>
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 px-3 py-4 md:p-4 border-b border-gray-50">
+              <div class="flex flex-col">
+                <span class="font-bold text-warm-600">{examTemplate?.name || 'Examen'}</span>
+                <span class="text-sm text-gray-500">{new Date(attempt.date).toLocaleString()}</span>
               </div>
-              <div class="exam-results">
-                <span class="fails" class:many-fails={fails > 3}>Fallos: {fails}</span>
-                <span class="status" class:pass={passed} class:fail={!passed}>
+              <div class="flex items-center gap-3">
+                <span class="font-semibold text-gray-500 {fails > 3 ? 'text-red-500' : ''}">Fallos: {fails}</span>
+                <span class="px-3 py-1 rounded-full text-xs font-bold
+                             {passed ? 'text-green-800 bg-green-50 border border-green-200' : 'text-red-800 bg-red-50 border border-red-200'}">
                   {passed ? 'APROBADO' : 'SUSPENSO'}
                 </span>
               </div>
             </div>
           {:else}
-            <p class="empty">No has finalizado ningún examen todavía.</p>
+            <p class="p-8 text-center text-gray-500 italic">No has finalizado ningún examen todavía.</p>
           {/each}
         </div>
       </div>
@@ -305,172 +318,22 @@
 
   {#if activeTab === 'summary'}
     {@const summary = getGlobalSummary()}
-    <div class="tab-content summary-grid">
-      <div class="stat-card">
-        <h4>Preguntas Anki</h4>
-        <span class="val">{summary.totalAnki}</span>
-        <p>Precisión: {summary.ankiAccuracy.toFixed(1)}%</p>
+    <div class="tab-content grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <div class="bg-white p-6 md:p-8 rounded-3xl text-center shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+        <h4 class="font-semibold text-warm-600">Preguntas Anki</h4>
+        <span class="block text-4xl md:text-5xl font-extrabold text-warm-600 my-2">{summary.totalAnki}</span>
+        <p class="text-gray-500">Precisión: {summary.ankiAccuracy.toFixed(1)}%</p>
       </div>
-      <div class="stat-card">
-        <h4>Exámenes Simulados</h4>
-        <span class="val">{summary.totalExams}</span>
-        <p>Aprobados: {summary.examPassRate.toFixed(1)}%</p>
+      <div class="bg-white p-6 md:p-8 rounded-3xl text-center shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+        <h4 class="font-semibold text-warm-600">Exámenes Simulados</h4>
+        <span class="block text-4xl md:text-5xl font-extrabold text-warm-600 my-2">{summary.totalExams}</span>
+        <p class="text-gray-500">Aprobados: {summary.examPassRate.toFixed(1)}%</p>
       </div>
-      <div class="stat-card">
-        <h4>Nota Media</h4>
-        <span class="val">{summary.avgExamScore.toFixed(1)}</span>
-        <p>sobre 30 puntos</p>
+      <div class="bg-white p-6 md:p-8 rounded-3xl text-center shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+        <h4 class="font-semibold text-warm-600">Nota Media</h4>
+        <span class="block text-4xl md:text-5xl font-extrabold text-warm-600 my-2">{summary.avgExamScore.toFixed(1)}</span>
+        <p class="text-gray-500">sobre 30 puntos</p>
       </div>
     </div>
   {/if}
 </div>
-
-<style>
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-  }
-
-  .tabs {
-    background: #f1f5f9;
-    padding: 4px;
-    border-radius: 12px;
-    display: flex;
-    gap: 4px;
-  }
-
-  .tabs button {
-    padding: 8px 16px;
-    border: none;
-    background: transparent;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    color: #64748b;
-    transition: all 0.2s;
-  }
-
-  .tabs button.active {
-    background: white;
-    color: #5c4b37;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  }
-
-  .chart-box {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 20px;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  }
-
-  .chart {
-    width: 100%;
-    height: 300px;
-  }
-
-  .legend {
-    display: flex;
-    justify-content: center;
-    gap: 1.5rem;
-    font-size: 0.9rem;
-    margin-top: 1rem;
-  }
-
-  .bar-leg { width: 20px; height: 10px; background: #8fb339; opacity: 0.5; display: inline-block; }
-  .line-leg { width: 20px; height: 2px; background: #5c4b37; display: inline-block; vertical-align: middle; }
-  .exam-line-leg { width: 20px; height: 2px; background: #3b82f6; display: inline-block; vertical-align: middle; }
-  .threshold-leg { width: 20px; height: 2px; border-top: 2px dashed #ef4444; display: inline-block; vertical-align: middle; }
-
-  .list-section h3 { margin-bottom: 1rem; }
-
-  .list {
-    background: white;
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  }
-
-  .item {
-    display: flex;
-    justify-content: space-between;
-    padding: 1rem;
-    border-bottom: 1px solid #f1f5f9;
-  }
-
-  .exam-item {
-    align-items: center;
-  }
-
-  .exam-info { display: flex; flex-direction: column; }
-  .exam-name { font-weight: 700; color: #5c4b37; }
-  .exam-date { font-size: 0.85rem; color: #64748b; }
-
-  .exam-results { display: flex; gap: 1.5rem; align-items: center; }
-  .fails { font-weight: 600; color: #64748b; }
-  .many-fails { color: #ef4444; }
-
-  .result {
-    padding: 0.3rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
-  }
-
-  .pass { 
-    color: #166534; 
-    background: #f0fdf4; 
-    border: 1px solid #bbf7d0;
-  }
-  .fail { 
-    color: #991b1b; 
-    background: #fef2f2; 
-    border: 1px solid #fecaca;
-  }
-
-  .empty { padding: 2rem; text-align: center; color: #64748b; font-style: italic; }
-
-  .pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1.5rem;
-    margin-top: 1.5rem;
-  }
-
-  .pagination button {
-    background: #f1f5f9;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-  }
-
-  .summary-grid .stat-card {
-    background: white;
-    padding: 2rem;
-    border-radius: 20px;
-    text-align: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  }
-
-  .val {
-    display: block;
-    font-size: 3rem;
-    font-weight: 800;
-    color: #5c4b37;
-    margin: 0.5rem 0;
-  }
-
-  .stat-card p { color: #64748b; margin: 0; }
-</style>

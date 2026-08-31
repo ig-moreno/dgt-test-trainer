@@ -114,65 +114,102 @@
       on:close={() => { showSimulator = false; refreshData(); }} 
     />
   {:else}
-    <div class="header">
-      <h2>Mis Exámenes</h2>
-      <button on:click={() => showDifficultyModal = true}>Crear Nuevo Examen</button>
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+      <h2 class="text-2xl font-bold text-warm-600">Mis Exámenes</h2>
+      <button class="bg-dgt-500 text-white px-5 py-2.5 rounded-xl font-semibold w-full md:w-auto border-none cursor-pointer
+                     hover:bg-dgt-600 shadow-md"
+              on:click={() => showDifficultyModal = true}>Crear Nuevo Examen</button>
     </div>
 
-    <table class="exam-table">
-      <thead>
-        <tr>
-          <th>Examen</th>
-          <th>Dificultad</th>
-          <th>Historial de Aciertos</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each $exams as exam}
-          {@const examAttempts = getAttemptsForExam(exam.id)}
+    <!-- Desktop: tabla -->
+    <div class="hidden md:block bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+      <table class="w-full border-collapse">
+        <thead>
           <tr>
-            <td>{exam.name}</td>
-            <td><span class="diff-badge {exam.difficulty}">{exam.difficulty}</span></td>
-            <td>
-              <div class="attempts-list">
-                {#each examAttempts as attempt}
-                  <span 
-                    class="attempt-badge {attempt.completed || attempt.score > 0 ? (attempt.total - attempt.score <= 3 ? 'pass' : 'fail') : 'pending'}"
-                    on:click={() => openAttempt(exam, attempt)}
-                    title="Ver este intento"
-                  >
-                    {(attempt.completed || attempt.score > 0) ? `${attempt.score}/${attempt.total}` : '...'}
-                  </span>
-                {/each}
-                {#if examAttempts.length === 0}
-                  <span class="pending">Sin intentos</span>
-                {/if}
-              </div>
-            </td>
-            <td class="exam-actions">
-              <button class="redo-btn" on:click={() => createNewAttempt(exam)}>
-                Nueva Prueba
-              </button>
-            </td>
+            <th class="px-6 py-4 text-left bg-gray-50 font-semibold text-warm-600 border-b border-gray-100">Examen</th>
+            <th class="px-6 py-4 text-left bg-gray-50 font-semibold text-warm-600 border-b border-gray-100">Dificultad</th>
+            <th class="px-6 py-4 text-left bg-gray-50 font-semibold text-warm-600 border-b border-gray-100">Historial de Aciertos</th>
+            <th class="px-6 py-4 text-left bg-gray-50 font-semibold text-warm-600 border-b border-gray-100">Acciones</th>
           </tr>
-        {/each}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {#each $exams as exam}
+            {@const examAttempts = getAttemptsForExam(exam.id)}
+            <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-4">{exam.name}</td>
+              <td class="px-6 py-4"><span class="diff-badge {exam.difficulty}">{exam.difficulty}</span></td>
+              <td class="px-6 py-4">
+                <div class="flex flex-wrap gap-1.5">
+                  {#each examAttempts as attempt}
+                    <span 
+                      class="attempt-badge {attempt.completed || attempt.score > 0 ? (attempt.total - attempt.score <= 3 ? 'pass' : 'fail') : 'pending'}"
+                      on:click={() => openAttempt(exam, attempt)}
+                      title="Ver este intento"
+                    >
+                      {(attempt.completed || attempt.score > 0) ? `${attempt.score}/${attempt.total}` : '...'}
+                    </span>
+                  {/each}
+                  {#if examAttempts.length === 0}
+                    <span class="text-gray-400 italic">Sin intentos</span>
+                  {/if}
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <button class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold border-none cursor-pointer text-sm hover:bg-blue-700"
+                        on:click={() => createNewAttempt(exam)}>
+                  Nueva Prueba
+                </button>
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile: cards -->
+    <div class="flex flex-col md:hidden gap-4">
+      {#each $exams as exam}
+        {@const examAttempts = getAttemptsForExam(exam.id)}
+        <div class="bg-white rounded-2xl p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+          <div class="flex justify-between items-start mb-3">
+            <span class="font-bold text-warm-600">{exam.name}</span>
+            <span class="diff-badge {exam.difficulty}">{exam.difficulty}</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            {#each examAttempts as attempt}
+              <span 
+                class="attempt-badge {attempt.completed || attempt.score > 0 ? (attempt.total - attempt.score <= 3 ? 'pass' : 'fail') : 'pending'}"
+                on:click={() => openAttempt(exam, attempt)}
+                title="Ver este intento"
+              >
+                {(attempt.completed || attempt.score > 0) ? `${attempt.score}/${attempt.total}` : '...'}
+              </span>
+            {/each}
+            {#if examAttempts.length === 0}
+              <span class="text-gray-400 italic text-sm">Sin intentos</span>
+            {/if}
+          </div>
+          <button class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold border-none cursor-pointer text-sm hover:bg-blue-700"
+                  on:click={() => createNewAttempt(exam)}>
+            Nueva Prueba
+          </button>
+        </div>
+      {/each}
+    </div>
 
     {#if showDifficultyModal}
-      <div class="modal">
-        <div class="modal-content">
-          <h3>Elegir Dificultad</h3>
-          <select bind:value={difficulty}>
+      <div class="fixed top-0 left-0 w-full h-full bg-black/50 flex items-center justify-center z-[200] p-4">
+        <div class="bg-white p-6 md:p-8 rounded-3xl text-center w-full max-w-sm shadow-[0_15px_40px_rgba(0,0,0,0.2)]">
+          <h3 class="text-xl font-bold text-warm-600 mb-4">Elegir Dificultad</h3>
+          <select bind:value={difficulty} class="w-full p-3 my-4 rounded-xl border-2 border-gray-100 focus:border-dgt-500 outline-none">
             <option value="Indiferente">Indiferente</option>
             <option value="Fácil">Fácil</option>
             <option value="Medio">Medio</option>
             <option value="Difícil">Difícil</option>
           </select>
-          <div class="modal-btns">
-            <button class="primary" on:click={startNewExam}>Empezar</button>
-            <button class="cancel" on:click={() => showDifficultyModal = false}>Cancelar</button>
+          <div class="flex gap-3 mt-2">
+            <button class="flex-1 bg-dgt-500 text-white py-3 rounded-xl font-bold border-none cursor-pointer hover:bg-dgt-600" on:click={startNewExam}>Empezar</button>
+            <button class="flex-1 bg-gray-300 text-white py-3 rounded-xl font-bold border-none cursor-pointer hover:bg-gray-400" on:click={() => showDifficultyModal = false}>Cancelar</button>
           </div>
         </div>
       </div>
@@ -181,38 +218,6 @@
 </div>
 
 <style>
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-  }
-
-  .exam-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  }
-
-  th, td {
-    padding: 1rem;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-  }
-
-  th {
-    background-color: #f9fafb;
-    font-weight: 600;
-    color: #5c4b37;
-  }
-
-  .pass { color: #10b981; font-weight: 700; }
-  .fail { color: #ef4444; font-weight: 700; }
-  .pending { color: #94a3b8; font-style: italic; }
-
   .diff-badge {
     font-size: 0.8rem;
     padding: 2px 8px;
@@ -224,45 +229,6 @@
   .Medio { background: #f59e0b; }
   .Difícil { background: #ef4444; }
 
-  .modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 200;
-  }
-  .modal-content {
-    background: white;
-    padding: 2rem;
-    border-radius: 20px;
-    text-align: center;
-  }
-  select {
-    width: 100%;
-    padding: 0.8rem;
-    margin: 1rem 0;
-    border-radius: 10px;
-  }
-  .modal-btns {
-    display: flex;
-    gap: 1rem;
-  }
-  .exam-actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-  
-  .attempts-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-  }
-
   .attempt-badge {
     padding: 2px 8px;
     border-radius: 6px;
@@ -271,16 +237,8 @@
     cursor: pointer;
     transition: transform 0.2s;
   }
-
-  .attempt-badge:hover {
-    transform: scale(1.1);
-  }
-
+  .attempt-badge:hover { transform: scale(1.1); }
   .attempt-badge.pass { background: #10b981; color: white; }
   .attempt-badge.fail { background: #ef4444; color: white; }
   .attempt-badge.pending { background: #f1f5f9; color: #64748b; }
-
-  .view-btn { background: #64748b; }
-  .redo-btn { background: #3b82f6; }
-  .cancel { background: #9ca3af; }
 </style>

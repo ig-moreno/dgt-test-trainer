@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { user, loading, initApp } from './lib/stores';
+  import { user, loading, initApp, examMode } from './lib/stores';
   import Navbar from './lib/components/Navbar.svelte';
+  import ExamTopBar from './lib/components/ExamTopBar.svelte';
   import Onboarding from './lib/components/Onboarding.svelte';
   import Anki from './lib/pages/Anki.svelte';
   import Exams from './lib/pages/Exams.svelte';
@@ -22,14 +23,18 @@
 </script>
 
 {#if $loading}
-  <div class="loader">Cargando...</div>
+  <div class="flex justify-center items-center h-screen text-xl text-dgt-500">Cargando...</div>
 {:else if !$user}
   <Onboarding on:registered={initApp} />
 {:else}
-  <div class="app-container">
-    <Navbar bind:activeTab onProfileClick={handleProfileClick} />
+  <div class="min-h-screen flex flex-col">
+    {#if $examMode.active && !$examMode.finished}
+      <ExamTopBar />
+    {:else}
+      <Navbar bind:activeTab onProfileClick={handleProfileClick} />
+    {/if}
     
-    <main class="content">
+    <main class="flex-1 w-full max-w-[1200px] mx-auto px-4 py-6 md:px-8 md:py-8">
       {#if activeTab === 'home'}
         <Dashboard on:navigate={(e) => activeTab = e.detail} />
       {:else if activeTab === 'anki'}
@@ -46,28 +51,3 @@
     {/if}
   </div>
 {/if}
-
-<style>
-  .loader {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    font-size: 1.5rem;
-    color: #8fb339;
-  }
-
-  .app-container {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .content {
-    flex: 1;
-    max-width: 1200px;
-    margin: 0 auto;
-    width: 100%;
-    padding: 2rem;
-  }
-</style>

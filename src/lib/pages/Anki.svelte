@@ -1,16 +1,16 @@
 <script lang="ts">
   import { onMount, createEventDispatcher } from 'svelte';
   const dispatch = createEventDispatcher();
-  import { fade, fly, scale } from 'svelte/transition';
-  import { db, type AnkiCard, type Question } from '../db';
+  import { scale } from 'svelte/transition';
+  import { db, type AnkiCard as AnkiCardDB, type Question } from '../db';
   import { questions, user, refreshData, stats, history } from '../stores';
   import { sm2 } from '../anki';
   import confetti from 'canvas-confetti';
   import GoalSummaryModal from '../components/GoalSummaryModal.svelte';
   import AnkiCard from '../components/AnkiCard.svelte';
-  import { BookOpen, CheckCircle, XCircle, ChevronRight } from 'lucide-svelte';
+  import { BookOpen } from 'lucide-svelte';
   
-  let currentCard: AnkiCard | null = null;
+  let currentCard: AnkiCardDB | null = null;
   let currentQuestion: Question | null = null;
   let loading = true;
   
@@ -136,7 +136,7 @@
   }
 </script>
 
-<div class="anki-page">
+<div class="min-h-[calc(100vh-80px)] md:min-h-[calc(100vh-100px)] flex justify-center px-0 md:px-8 py-4 md:py-8">
   {#if showSummary}
     <GoalSummaryModal 
       {sessionResults} 
@@ -147,24 +147,26 @@
     />
   {/if}
 
-  <div class="anki-container">
-    <div class="goal-pills">
-      <div class="pill">
-        <span class="label">Hoy:</span>
-        <span class="value">{$stats.ankiToday} / {$user?.dailyGoal}</span>
+  <div class="w-full max-w-[700px] flex flex-col">
+    <div class="flex flex-wrap justify-center items-center gap-2 md:gap-4 mb-6">
+      <div class="bg-white px-4 py-2 rounded-full shadow-[0_4px_10px_rgba(0,0,0,0.05)] text-sm font-semibold">
+        <span class="text-gray-400">Hoy:</span>
+        <span class="text-warm-600">{$stats.ankiToday} / {$user?.dailyGoal}</span>
       </div>
       {#if $user && $stats.ankiToday >= $user.dailyGoal}
-        <div class="pill success" in:scale>¡Objetivo cumplido! 🥳</div>
+        <div class="bg-dgt-500 text-white px-4 py-2 rounded-full shadow text-sm font-semibold" in:scale>¡Objetivo cumplido! 🥳</div>
       {/if}
     </div>
 
     {#if loading}
-      <div class="loading-state">Cargando mazo...</div>
+      <div class="text-center text-gray-400 py-12">Cargando mazo...</div>
     {:else if currentQuestion}
-      <div class="card-stack">
+      <div class="relative w-full mb-8">
         <!-- Decoration cards for stack effect -->
-        <div class="stack-bg card-2"></div>
-        <div class="stack-bg card-1"></div>
+        <div class="absolute inset-0 bg-white rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] border border-gray-100
+                    translate-y-1 scale-[0.96] opacity-70"></div>
+        <div class="absolute inset-0 bg-white rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] border border-gray-100
+                    translate-y-2 scale-[0.92] opacity-40"></div>
 
         {#key currentQuestion.id}
           <AnkiCard 
@@ -175,303 +177,14 @@
         {/key}
       </div>
     {:else}
-      <div class="empty-stack">
-        <BookOpen size={48} />
-        <h2>¡Mazo completado!</h2>
-        <p>No tienes más tarjetas pendientes para hoy.</p>
-        <button class="home-btn" on:click={() => dispatch('home')}>Volver al inicio</button>
+      <div class="text-center px-6 py-16 md:py-20 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)]">
+        <BookOpen size={48} class="mx-auto text-gray-300 mb-4" />
+        <h2 class="text-2xl font-bold text-warm-600 mb-2">¡Mazo completado!</h2>
+        <p class="text-gray-500 mb-6">No tienes más tarjetas pendientes para hoy.</p>
+        <button class="bg-dgt-500 text-white font-extrabold text-lg px-8 py-3.5 rounded-2xl border-none cursor-pointer
+                       transition-transform hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(143,179,57,0.3)]"
+                on:click={() => dispatch('home')}>Volver al inicio</button>
       </div>
     {/if}
   </div>
 </div>
-
-<style>
-  .anki-page {
-    min-height: calc(100vh - 100px);
-    display: flex;
-    justify-content: center;
-    padding: 2rem;
-  }
-
-  .anki-container {
-    width: 100%;
-    max-width: 700px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .goal-pills {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-
-  .pill {
-    background: white;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    font-size: 0.9rem;
-    font-weight: 600;
-  }
-
-  .pill.success {
-    background: #8fb339;
-    color: white;
-  }
-
-  .card-stack {
-    position: relative;
-    min-height: 750px;
-    height: auto;
-    width: 100%;
-    margin-bottom: 3rem;
-  }
-
-  .stack-bg {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: white;
-    border-radius: 30px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-    border: 1px solid #f1f5f9;
-  }
-
-  .card-1 { transform: translateY(15px) scale(0.96); z-index: 1; opacity: 0.7; }
-  .card-2 { transform: translateY(30px) scale(0.92); z-index: 0; opacity: 0.4; }
-
-  .anki-card-container {
-    position: relative; /* Changed from absolute to allow natural growth if needed */
-    width: 100%;
-    min-height: 700px;
-    background: white;
-    border-radius: 30px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-    border: 1px solid #f1f5f9;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  /* When cards are absolute for the stack effect, we need a way to stack them properly */
-  .card-stack .anki-card-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-  }
-
-  .card-header {
-    padding: 1.5rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #f8fafc;
-    background: #fcfcfc;
-  }
-
-  .category {
-    font-weight: 800;
-    color: #94a3b8;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
-  }
-
-  .result-badge span {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-weight: 700;
-    font-size: 0.9rem;
-  }
-  .correct { color: #166534; }
-  .incorrect { color: #991b1b; }
-
-  .card-body {
-    flex: 1;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    overflow-y: auto; /* Enable scroll if content is too long */
-  }
-
-  .question-section h3 {
-    font-size: 1.5rem;
-    color: #1e293b;
-    line-height: 1.4;
-    margin: 0;
-  }
-
-  .image-box {
-    width: 100%;
-    background: #f1f5f9;
-    border-radius: 20px;
-    padding: 0.8rem;
-    box-sizing: border-box;
-  }
-
-  .image-box img {
-    width: 100%;
-    max-height: 250px;
-    object-fit: contain;
-    border-radius: 12px;
-    display: block;
-  }
-
-  .options-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .opt-btn {
-    display: flex;
-    align-items: center;
-    gap: 1.2rem;
-    text-align: left;
-    padding: 1.2rem;
-    background: #f8fafc;
-    border: 2px solid #e2e8f0;
-    border-radius: 18px;
-    transition: all 0.2s;
-    cursor: pointer;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .opt-btn:hover {
-    background: #f1f5f9;
-    border-color: #8fb339;
-    transform: translateX(8px);
-  }
-
-  .letter {
-    flex-shrink: 0;
-    width: 32px;
-    height: 32px;
-    background: #cbd5e1;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 900;
-    font-size: 0.9rem;
-    color: #1e293b; /* Dark text for contrast */
-  }
-
-  .opt-btn .text {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #334155; /* Dark grey text */
-    line-height: 1.4;
-  }
-
-  .correction-view {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-  }
-
-  .correction-item {
-    padding: 1.2rem;
-    border-radius: 16px;
-    background: #f8fafc;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    color: #475569;
-    border: 2px solid transparent;
-  }
-
-  .correction-item.correct { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
-  .correction-item.wrong { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-
-  .correction-item .letter {
-    background: rgba(0,0,0,0.05);
-  }
-
-  .explanation-box {
-    margin-top: 1rem;
-    padding: 1.5rem;
-    background: #fffbeb;
-    border-radius: 20px;
-    border-left: 5px solid #f59e0b;
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);
-  }
-
-  .explanation-box strong { color: #92400e; font-size: 1rem; display: block; margin-bottom: 0.5rem; }
-  .explanation-box p { font-size: 0.95rem; color: #b45309; line-height: 1.6; margin: 0; }
-
-  .card-footer {
-    padding: 2rem;
-    background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
-    margin-top: auto;
-  }
-
-  .rating-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.8rem;
-  }
-
-  .r-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 0.8rem 0.4rem;
-    border-radius: 14px;
-    transition: all 0.2s;
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-  }
-
-  .r-btn .name { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; margin-bottom: 2px; }
-  .r-btn .count { font-size: 0.7rem; opacity: 0.8; font-weight: 700; }
-
-  .r0 { background: #fee2e2; color: #991b1b; }
-  .r2 { background: #fff7ed; color: #9a3412; }
-  .r3 { background: #f0fdf4; color: #166534; }
-  .r5 { background: #ecfdf5; color: #065f46; }
-
-  .r-btn:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
-
-  .footer-tip {
-    text-align: center;
-    color: #94a3b8;
-    font-size: 0.9rem;
-    font-weight: 700;
-  }
-
-  .empty-stack {
-    text-align: center;
-    padding: 5rem 2rem;
-    background: white;
-    border-radius: 30px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-  }
-
-  .home-btn {
-    background: #8fb339;
-    color: white;
-    padding: 1.2rem 2.5rem;
-    border-radius: 16px;
-    font-weight: 800;
-    font-size: 1.1rem;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s;
-  }
-
-  .home-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(143, 179, 57, 0.3);
-  }
-</style>

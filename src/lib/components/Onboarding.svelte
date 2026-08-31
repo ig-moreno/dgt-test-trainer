@@ -55,210 +55,74 @@
   }
 </script>
 
-<div class="onboarding">
-  <div class="card">
-    <h2>¡Bienvenido al DGT Trainer!</h2>
-    <p>Para empezar, necesitamos unos pocos detalles.</p>
+<div class="fixed top-0 left-0 w-full h-full bg-black/60 backdrop-blur-md flex justify-center items-center z-[1000] p-4 overflow-y-auto">
+  <div class="bg-white p-6 md:p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] max-w-[450px] w-full text-center my-auto">
+    <h2 class="m-0 mb-2 text-2xl md:text-3xl font-bold text-warm-600">¡Bienvenido al DGT Trainer!</h2>
+    <p class="text-gray-500 mb-8">Para empezar, necesitamos unos pocos detalles.</p>
     
-    <div class="field">
-      <label for="name">¿Cómo te llamas?</label>
-      <input type="text" id="name" bind:value={name} placeholder="Tu nombre" />
+    <div class="mb-6 text-left">
+      <label for="name" class="block mb-2 font-semibold text-warm-600">¿Cómo te llamas?</label>
+      <input type="text" id="name" bind:value={name} placeholder="Tu nombre"
+             class="w-full p-3 border-2 border-gray-100 rounded-xl text-base transition-all box-border
+                    focus:border-dgt-500 focus:outline-none focus:bg-warm-50" />
     </div>
     
-    <div class="avatar-selection">
-        <h4>Elige tu Avatar</h4>
-        <div class="avatar-grid">
+    <div class="mb-8 text-left">
+        <h4 class="mb-3 text-warm-600 text-xs font-bold uppercase tracking-wider">Elige tu Avatar</h4>
+        <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
           {#each avatars as avatar}
             <button 
               type="button"
-              class="avatar-btn" 
-              class:selected={selectedAvatar === avatar}
+              class="bg-gray-50 border-2 border-transparent p-1 rounded-xl cursor-pointer transition-all aspect-square flex items-center justify-center
+                     hover:border-dgt-300
+                     {selectedAvatar === avatar ? 'border-dgt-500 bg-dgt-100 scale-105' : ''}"
               on:click={() => selectedAvatar = avatar}
             >
-              <img src={avatar} alt="Avatar" />
+              <img src={avatar} alt="Avatar" class="w-full h-full object-contain" />
             </button>
           {/each}
           
-          <label class="avatar-upload" class:selected={selectedAvatar === customAvatar}>
-            <input type="file" accept="image/*" on:change={handleFileUpload} />
+          <label class="flex flex-col items-center justify-center bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer transition-all aspect-square overflow-hidden text-center
+                        {selectedAvatar === customAvatar ? 'border-dgt-500 bg-dgt-100 border-solid scale-105' : ''}">
+            <input type="file" accept="image/*" on:change={handleFileUpload} class="hidden" />
             {#if customAvatar}
-              <img src={customAvatar} alt="Custom" />
+              <img src={customAvatar} alt="Custom" class="w-full h-full object-cover" />
             {:else}
-              <span class="upload-icon">📷</span>
-              <span>Subir foto</span>
+              <span class="text-lg">📷</span>
+              <span class="text-[10px] text-gray-500 font-bold mt-1 px-1">Subir foto</span>
             {/if}
           </label>
         </div>
       </div>
     
-    <div class="field">
-      <label for="goal">¿Cuántas tarjetas Anki quieres hacer al día?</label>
-      <input type="number" id="goal" bind:value={dailyGoal} min="1" />
+    <div class="mb-6 text-left">
+      <label for="goal" class="block mb-2 font-semibold text-warm-600">¿Cuántas tarjetas Anki quieres hacer al día?</label>
+      <input type="number" id="goal" bind:value={dailyGoal} min="1"
+             class="w-full p-3 border-2 border-gray-100 rounded-xl text-base transition-all box-border
+                    focus:border-dgt-500 focus:outline-none" />
     </div>
 
-    <div class="field">
-      <label for="examGoal">¿Cuántos exámenes quieres hacer al día?</label>
-      <input type="number" id="examGoal" bind:value={dailyExamGoal} min="1" />
+    <div class="mb-6 text-left">
+      <label for="examGoal" class="block mb-2 font-semibold text-warm-600">¿Cuántos exámenes quieres hacer al día?</label>
+      <input type="number" id="examGoal" bind:value={dailyExamGoal} min="1"
+             class="w-full p-3 border-2 border-gray-100 rounded-xl text-base transition-all box-border
+                    focus:border-dgt-500 focus:outline-none" />
     </div>
     
-    <button class="start-btn" on:click={register} disabled={!name}>¡Empezar!</button>
+    <button class="w-full p-4 bg-dgt-500 text-white border-none rounded-xl text-lg font-bold cursor-pointer transition-all mt-4
+                   hover:bg-dgt-600 hover:-translate-y-0.5 hover:shadow-[0_10px_20px_rgba(143,179,57,0.2)]
+                   disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:transform-none disabled:hover:bg-gray-300"
+            on:click={register} disabled={!name}>¡Empezar!</button>
   </div>
 </div>
 
 <style>
-  .onboarding {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.6);
-    backdrop-filter: blur(8px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+  input[type="number"] {
+    -moz-appearance: textfield;
   }
-
-  .card {
-    background: white;
-    padding: 2.5rem;
-    border-radius: 24px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-    max-width: 450px;
-    width: 90%;
-    text-align: center;
-  }
-
-  h2 { margin: 0 0 0.5rem; color: #5c4b37; }
-  p { color: #64748b; margin-bottom: 2rem; }
-
-  .field {
-    margin-bottom: 1.5rem;
-    text-align: left;
-  }
-
-  label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: #5c4b37;
-  }
-
-  input {
-    width: 100%;
-    padding: 0.8rem;
-    border: 2px solid #f1f5f9;
-    border-radius: 12px;
-    font-size: 1rem;
-    transition: all 0.2s;
-    box-sizing: border-box;
-  }
-
-  input:focus {
-    border-color: #8fb339;
-    outline: none;
-    background: #fdfcf0;
-  }
-
-  .avatar-selection {
-    margin-bottom: 2rem;
-    text-align: left;
-  }
-
-  .avatar-selection h4 {
-    margin-bottom: 1rem;
-    color: #5c4b37;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .avatar-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.8rem;
-  }
-
-  .avatar-btn {
-    background: #f8fafc;
-    border: 3px solid transparent;
-    padding: 0.3rem;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .avatar-btn img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-
-  .avatar-btn.selected {
-    border-color: #8fb339;
-    background: #f1f8e9;
-    transform: scale(1.05);
-  }
-
-  .avatar-upload {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: #f8fafc;
-    border: 3px dashed #e2e8f0;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    aspect-ratio: 1;
-    overflow: hidden;
-  }
-
-  .avatar-upload input { display: none; }
-  .upload-icon { font-size: 1.2rem; }
-  .avatar-upload span { font-size: 0.6rem; color: #64748b; font-weight: 700; margin-top: 2px; }
-
-  .avatar-upload img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .avatar-upload.selected {
-    border-color: #8fb339;
-    background: #f1f8e9;
-    border-style: solid;
-    transform: scale(1.05);
-  }
-
-  .start-btn {
-    width: 100%;
-    padding: 1rem;
-    background: #8fb339;
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-top: 1rem;
-  }
-
-  .start-btn:hover:not(:disabled) {
-    background: #7a9a30;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(143, 179, 57, 0.2);
-  }
-
-  .start-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: #cbd5e1;
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
 </style>
